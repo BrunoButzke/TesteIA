@@ -2,10 +2,13 @@ import axios from 'axios';
 
 const baseURL = window.location.origin.includes('localhost') 
   ? 'http://localhost:5000/api'
-  : '/api';
+  : `${window.location.origin}/api`;
 
 const api = axios.create({
-  baseURL
+  baseURL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 // Interceptor para adicionar o token em todas as requisições

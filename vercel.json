@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "buildCommand": "echo 'Instalando dependências do frontend...' && cd frontend && npm install && echo 'Buildando frontend...' && npm run build && echo 'Instalando dependências do backend...' && cd ../api && npm install",
+  "outputDirectory": "frontend/build",
+  "framework": "create-react-app",
+  "builds": [
+    {
+      "src": "api/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/build/$1"
+    }
+  ]
+} 

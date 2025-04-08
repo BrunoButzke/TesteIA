@@ -1,9 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build && cd ../api && npm install",
-  "installCommand": "echo 'Skip install command'",
-  "outputDirectory": "frontend/build",
-  "framework": "create-react-app",
+  "devCommand": "cd frontend && npm start & cd api && npm run dev",
   "builds": [
     {
       "src": "api/server.js",

@@ -1,116 +1,111 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext({});
+const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(null);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [autenticado, setAutenticado] = useState(false);
-  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const usuarioSalvo = localStorage.getItem('usuario');
+    const loadStoredUser = () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (storedUser && token) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error("Erro ao carregar usuário do localStorage:", error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+      }
+      setLoading(false);
+    };
 
-    console.log('Token no localStorage:', token);
-    console.log('Usuário no localStorage:', usuarioSalvo);
-
-    if (token && usuarioSalvo) {
-      api.defaults.headers.Authorization = `Bearer ${token}`;
-      console.log('Headers da API:', api.defaults.headers);
-      setUsuario(JSON.parse(usuarioSalvo));
-      setAutenticado(true);
-    }
-
-    setLoading(false);
+    loadStoredUser();
   }, []);
 
-  const login = async (email, senha, novoCodigoPersonal = null) => {
+  const login = async (email, senha) => {
     try {
       setLoading(true);
-      const response = await api.post('/auth/login', { 
-        email, 
-        senha,
-        novoCodigoPersonal
-      });
+      const response = await api.post('/auth/login', { email, senha });
       
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('usuario', JSON.stringify(response.data.usuario));
-      
-      api.defaults.headers.Authorization = `Bearer ${response.data.token}`;
-      
-      setUsuario(response.data.usuario);
-      setAutenticado(true);
-      setError(null);
-      return { success: true };
-    } catch (error) {
-      setError(
-        error.response?.data?.mensagem || 
-        'Ocorreu um erro ao fazer login. Tente novamente.'
-      );
-      
-      // Verificar se o usuário está desvinculado
-      if (error.response?.status === 403 && error.response?.data?.desvinculado) {
-        return { 
-          success: false, 
-          desvinculado: true, 
-          mensagem: error.response.data.mensagem 
-        };
+      // Verificar se a resposta contém o token e usuário
+      if (response.data && response.data.token && response.data.user) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        setUser(response.data.user);
+        
+        // Redirecionar com base no tipo de usuário
+        if (response.data.user.tipo === 'personal') {
+          navigate('/dashboard/personal');
+        } else {
+          navigate('/dashboard/aluno');
+        }
+        
+        return { success: true };
+      } else {
+        throw new Error('Resposta inválida do servidor');
       }
-      
-      return { success: false };
+    } catch (error) {
+      console.error("Erro no login:", error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.' 
+      };
     } finally {
       setLoading(false);
     }
   };
 
-  async function registro(nome, email, senha, tipo, codigoPersonal = null) {
+  const registro = async (userData) => {
     try {
-      const response = await api.post('/auth/registro', {
-        nome,
-        email,
-        senha,
-        tipo,
-        codigoPersonal
-      });
-      const { token, usuario } = response.data;
-
-      console.log('Token recebido no registro:', token);
-      console.log('Usuário recebido no registro:', usuario);
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('usuario', JSON.stringify(usuario));
-
-      api.defaults.headers.Authorization = `Bearer ${token}`;
-      console.log('Headers da API após registro:', api.defaults.headers);
-      setUsuario(usuario);
-
-      return true;
+      setLoading(true);
+      const response = await api.post('/auth/registro', userData);
+      
+      if (response.data && response.data.token && response.data.user) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        setUser(response.data.user);
+        
+        // Redirecionar com base no tipo de usuário
+        if (response.data.user.tipo === 'personal') {
+          navigate('/dashboard/personal');
+        } else {
+          navigate('/dashboard/aluno');
+        }
+        
+        return { success: true };
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
     } catch (error) {
-      console.error('Erro no registro:', error);
-      throw new Error(error.response?.data?.mensagem || 'Erro ao registrar');
+      console.error("Erro no registro:", error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Erro ao criar conta.' 
+      };
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  function logout() {
+  const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
-    setUsuario(null);
-    delete api.defaults.headers.Authorization;
-  }
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/login');
+  };
 
   return (
-    <AuthContext.Provider value={{ usuario, login, registro, logout, loading, autenticado, error }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, registro }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  return context;
-} 
+export const useAuth = () => useContext(AuthContext); 

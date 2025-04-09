@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+src
+public
+*.md
+.git*
+.env*
+!.env.production 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && CI=false npm run build && cd ../api && npm install",
+  "buildCommand": false,
   "outputDirectory": "frontend/build",
   "routes": [
     {

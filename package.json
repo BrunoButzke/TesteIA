@@ -8,9 +8,7 @@
   ],
   "scripts": {
     "start": "cd api && npm start",
-    "build": "npm run build:frontend && npm run build:api",
-    "build:frontend": "cd frontend && npm install && npm run build",
-    "build:api": "cd api && npm install",
+    "build": "cd frontend && npm install && CI=false npm run build && cd ../api && npm install",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:api\"",
     "dev:frontend": "cd frontend && npm start",
     "dev:api": "cd api && npm run dev"

@@ -10,12 +10,13 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: '*',
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
-// Rota de teste para verificar se a API está funcionando
+// Rota de teste
 app.get('/api/check', (req, res) => {
   res.json({ status: 'API funcionando!', timestamp: new Date().toISOString() });
 });
@@ -54,14 +55,14 @@ app.use('/api/usuarios', usuarioRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {
-  console.error('Erro na API:', err.stack);
+  console.error('Erro na API:', err);
   res.status(500).json({ 
     error: 'Erro interno do servidor',
     message: err.message 
   });
 });
 
-// Para desenvolvimento local
+// Iniciar o servidor em desenvolvimento
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
@@ -69,5 +70,5 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Exporta o app para uso com Vercel
+// Para uso com Vercel
 module.exports = app; 
